@@ -186,13 +186,13 @@ class Job:
     '''
 
     def __init__(self, cmd, name, out_file=None, err_file=None, sb_file=None,
-                 queue='standard', cpu=1, mem=None, time=None, gpu=0):
+                 queue='cpu_normal', cpu=2, mem=None, time=None, gpu=0):
         self.cmd = cmd
         self.name = name
         self.out_file = out_file
         self.err_file = err_file
         self.sb_file = sb_file
-        self.queue = self.translate_gpu(queue)
+        self.queue = queue
         self.cpu = cpu
         self.mem = mem
         self.time = time
@@ -239,21 +239,13 @@ class Job:
         sbatch_out = open(sbatch_file, 'w')
 
         print('#!/bin/bash\n', file=sbatch_out)
-        if self.gpu > 0:
-            if self.queue == "" or self.queue == 'gpu':
-                gpu_str = 'gpu'
-                gres_str = '--gres=gpu'
-            elif self.queue == 'nvidia_geforce_rtx_4090':
-                gpu_str = 'minigpu'
-                gres_str = '--gres=gpu:%s' % self.queue
-            else:
-                gpu_str = 'gpu'
-                gres_str = '--gres=gpu:%s' % self.queue
-            print('#SBATCH -p %s' % gpu_str, file=sbatch_out)
-            print('#SBATCH %s:%d\n' % (gres_str, self.gpu), file=sbatch_out)
+        if self.queue.startswith('gpu'):
+            print('#SBATCH -p gpu_p', file=sbatch_out)
         else:
-            print('#SBATCH -p %s' % self.queue, file=sbatch_out)
+            print('#SBATCH -p cpu_p', file=sbatch_out)
+        print('#SBATCH --qos %s' % self.queue, file=sbatch_out)
         print('#SBATCH -n 1', file=sbatch_out)
+        print('#SBATCH --nice 10000', file=sbatch_out)
         print('#SBATCH -c %d' % self.cpu, file=sbatch_out)
         if self.name:
             print('#SBATCH -J %s' % self.name, file=sbatch_out)
