@@ -241,11 +241,14 @@ class Job:
         print('#!/bin/bash\n', file=sbatch_out)
         if self.queue.startswith('gpu'):
             print('#SBATCH -p gpu_p', file=sbatch_out)
+            print('#SBATCH --gres=gpu:1', file=sbatch_out)
+            if self.gpu:
+                print('#SBATCH --constraint=%s' % self.gpu, file=sbatch_out)
         else:
             print('#SBATCH -p cpu_p', file=sbatch_out)
         print('#SBATCH --qos %s' % self.queue, file=sbatch_out)
         print('#SBATCH -n 1', file=sbatch_out)
-        print('#SBATCH --nice 10000', file=sbatch_out)
+        print('#SBATCH --nice=10000', file=sbatch_out)
         print('#SBATCH -c %d' % self.cpu, file=sbatch_out)
         if self.name:
             print('#SBATCH -J %s' % self.name, file=sbatch_out)
@@ -257,10 +260,20 @@ class Job:
             print('#SBATCH --mem %d' % self.mem, file=sbatch_out)
         if self.time:
             print('#SBATCH --time %s' % self.time, file=sbatch_out)
+
+        print('source /home/icb/sergey.vilov/.bashrc', file=sbatch_out)
+        print('conda activate borzoi', file=sbatch_out)
+        print('export LD_LIBRARY_PATH=/home/icb/sergey.vilov/miniconda3/lib:$LD_LIBRARY_PATH', file=sbatch_out)
+        if self.queue.startswith('gpu'):
+            print('export CUDA_VISIBLE_DEVICES=0', file=sbatch_out)
+
         print(self.cmd, file=sbatch_out)
 
         sbatch_out.close()
 
+        with open(sbatch_file, 'r') as f:
+            lines = '\n'.join(f.readlines())
+            print(lines)
         # launch it; check_output to get the id
         launch_str = subprocess.check_output('sbatch %s' % sbatch_file, shell=True)
 
