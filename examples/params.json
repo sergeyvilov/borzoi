@@ -78,6 +78,11 @@
             "name": "final",
             "units": 2258,
             "activation": "softplus"
+        },
+        "head_human": {
+            "name": "final",
+            "units": 6253,
+            "activation": "softplus"
         }
     }
 }
